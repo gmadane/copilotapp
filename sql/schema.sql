@@ -1,0 +1,50 @@
+-- sql/schema.sql
+CREATE DATABASE IF NOT EXISTS mhtcet DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE mhtcet;
+
+-- Questions
+CREATE TABLE IF NOT EXISTS questions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  subject VARCHAR(64) NOT NULL,
+  text TEXT NOT NULL,
+  explanation TEXT NULL,
+  source VARCHAR(128) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  UNIQUE KEY uq_subject_text (subject, text(512))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Options
+CREATE TABLE IF NOT EXISTS options (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  question_id BIGINT UNSIGNED NOT NULL,
+  label CHAR(1) NOT NULL,
+  text TEXT NOT NULL,
+  is_correct TINYINT(1) NOT NULL DEFAULT 0,
+  explanation TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+  INDEX idx_question (question_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Quiz attempts
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL,
+  subject VARCHAR(64) NOT NULL,
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Attempt answers
+CREATE TABLE IF NOT EXISTS attempt_answers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  attempt_id BIGINT UNSIGNED NOT NULL,
+  question_id BIGINT UNSIGNED NOT NULL,
+  chosen_option_id BIGINT UNSIGNED NULL,
+  correct TINYINT(1) NOT NULL,
+  FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
+  FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
+  FOREIGN KEY (chosen_option_id) REFERENCES options(id) ON DELETE SET NULL,
+  INDEX idx_attempt (attempt_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

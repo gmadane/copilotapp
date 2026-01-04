@@ -15,6 +15,28 @@ body {
 
 .hidden { display: none; }
 
+.status {
+  margin-top: 10px;
+  color: #374151;
+  font-style: italic;
+  display: none;
+}
+.status.visible { display: block; }
+
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #2563eb;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .question { margin: 20px 0; }
 .option {
   padding: 10px;
@@ -34,4 +56,15 @@ button {
   border-radius: 6px;
   cursor: pointer;
   margin-top: 10px;
+}
+#startBtn { background: #2563eb; color: white; }
+#submitBtn { background: #10b981; color: white; }
+#restartBtn { background: #6b7280; color: white; }
+
+.correct { background: #ecfdf5; border-left: 4px solid #10b981; padding: 10px; margin: 10px 0; }
+.incorrect { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px; margin: 10px 0; }
+
+#resultChart {
+  margin: 20px auto;
+  display: block;
 }

@@ -11,7 +11,7 @@ app.use(express.static('public'));
 
 const PORT = process.env.PORT || 5000;
 const SN_API_KEY = process.env.SN_API_KEY;
-const SN_MODEL = process.env.SN_MODEL || 'Meta-Llama-3.3-70B-Instruct';
+const SN_MODEL = process.env.SN_MODEL || 'Meta-Llama-3.1-8B-Instruct';
 const SN_ENDPOINT = 'https://api.sambanova.ai/v1/chat/completions';
 
 if (!SN_API_KEY) {
@@ -19,11 +19,39 @@ if (!SN_API_KEY) {
   process.exit(1);
 }
 
+function sanitizeReply(reply) {
+  if (!reply) return "";
+
+  // Remove markdown fences
+  reply = reply.replace(/```json/g, "")
+               .replace(/```/g, "")
+               .trim();
+
+  // Extract JSON array if present
+  const startIndex = reply.indexOf("[");
+  const endIndex = reply.lastIndexOf("]");
+  if (startIndex !== -1 && endIndex !== -1) {
+    reply = reply.substring(startIndex, endIndex + 1);
+  }
+
+  // Remove trailing commas before } or ]
+  reply = reply.replace(/,\s*}/g, "}")
+               .replace(/,\s*]/g, "]");
+
+  // Remove stray commas inside strings like "$...$,"
+  reply = reply.replace(/"\s*([^"]*?)",\s*"/g, '"$1","');
+
+  // Collapse whitespace
+  reply = reply.replace(/\s+/g, " ");
+
+  return reply;
+}
+
 app.post('/api/questions', async (req, res) => {
   const { subject } = req.body;
   if (!subject) return res.status(400).json({ error: 'Subject is required' });
 
-  const prompt = `Generate 10 multiple-choice questions for MHT-CET 12th Science in ${subject}.
+  const prompt = `Generate 25 multiple-choice questions for MHT-CET 12th Science in ${subject}.
 Each question must be returned as JSON with fields:
 "text": string,
 "options": [
@@ -56,20 +84,24 @@ Return ONLY a valid JSON array.`;
     const data = await response.json();
     let reply = data?.choices?.[0]?.message?.content || "";
 
-    // Cleanup
-    reply = reply.replace(/```json/g, "").replace(/```/g, "").trim();
-    const startIndex = reply.indexOf("[");
-    const endIndex = reply.lastIndexOf("]");
-    if (startIndex !== -1 && endIndex !== -1) {
-      reply = reply.substring(startIndex, endIndex + 1);
-    }
+    // Sanitize
+    reply = sanitizeReply(reply);
+    console.log("Sanitized reply:", reply);
 
     let questions;
     try {
-      questions = JSON.parse(reply);
+      const parsed = JSON.parse(reply);
+      if (parsed.questions && Array.isArray(parsed.questions)) {
+        questions = parsed.questions;
+      } else if (Array.isArray(parsed)) {
+        questions = parsed;
+      } else {
+        throw new Error("Unexpected JSON structure");
+      }
       res.json({ questions });
     } catch (e) {
-      console.error("Parse error:", e, "Cleaned reply:", reply);
+      console.error("Parse error:", e.message);
+      // Fallback: return raw string so frontend can still attempt to parse
       return res.status(200).json({ error: "Failed to parse questions JSON", raw: reply });
     }
   } catch (error) {

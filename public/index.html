@@ -16,6 +16,9 @@
     </select>
     <button id="startBtn">Start Quiz</button>
 
+    <div id="status" class="status"></div>
+    <div id="spinner" class="spinner hidden"></div>
+
     <div id="quizSection" class="hidden">
       <div id="questionContainer"></div>
       <button id="submitBtn">Submit Answers</button>
@@ -24,11 +27,14 @@
     <div id="resultsSection" class="hidden">
       <h3>Results</h3>
       <div id="scoreLine"></div>
+      <canvas id="resultChart" width="300" height="300"></canvas>
       <div id="resultsList"></div>
       <button id="restartBtn">Restart</button>
     </div>
   </div>
 
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
