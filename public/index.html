@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MHT-CET Quiz App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>MHT-CET 12th Science Quiz</h2>
+    <p>Select subject to generate questions:</p>
+    <select id="subjectSelect">
+      <option value="maths">Maths</option>
+      <option value="physics">Physics</option>
+      <option value="chemistry">Chemistry</option>
+    </select>
+    <button id="startBtn">Start Quiz</button>
+
+    <div id="quizSection" class="hidden">
+      <div id="questionContainer"></div>
+      <button id="submitBtn">Submit Answers</button>
+    </div>
+
+    <div id="resultsSection" class="hidden">
+      <h3>Results</h3>
+      <div id="scoreLine"></div>
+      <div id="resultsList"></div>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
