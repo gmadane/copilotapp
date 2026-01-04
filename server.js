@@ -1,8 +1,10 @@
-// server.js
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -19,34 +21,25 @@ if (!SN_API_KEY) {
   process.exit(1);
 }
 
+// --- Sanitizer ---
 function sanitizeReply(reply) {
   if (!reply) return "";
-
-  // Remove markdown fences
   reply = reply.replace(/```json/g, "")
                .replace(/```/g, "")
                .trim();
-
-  // Extract JSON array if present
   const startIndex = reply.indexOf("[");
   const endIndex = reply.lastIndexOf("]");
   if (startIndex !== -1 && endIndex !== -1) {
     reply = reply.substring(startIndex, endIndex + 1);
   }
-
-  // Remove trailing commas before } or ]
   reply = reply.replace(/,\s*}/g, "}")
-               .replace(/,\s*]/g, "]");
-
-  // Remove stray commas inside strings like "$...$,"
-  reply = reply.replace(/"\s*([^"]*?)",\s*"/g, '"$1","');
-
-  // Collapse whitespace
-  reply = reply.replace(/\s+/g, " ");
-
+               .replace(/,\s*]/g, "]")
+               .replace(/"\s*([^"]*?)",\s*"/g, '"$1","')
+               .replace(/\s+/g, " ");
   return reply;
 }
 
+// --- Generate questions ---
 app.post('/api/questions', async (req, res) => {
   const { subject } = req.body;
   if (!subject) return res.status(400).json({ error: 'Subject is required' });
@@ -83,10 +76,7 @@ Return ONLY a valid JSON array.`;
 
     const data = await response.json();
     let reply = data?.choices?.[0]?.message?.content || "";
-
-    // Sanitize
     reply = sanitizeReply(reply);
-    console.log("Sanitized reply:", reply);
 
     let questions;
     try {
@@ -101,13 +91,26 @@ Return ONLY a valid JSON array.`;
       res.json({ questions });
     } catch (e) {
       console.error("Parse error:", e.message);
-      // Fallback: return raw string so frontend can still attempt to parse
       return res.status(200).json({ error: "Failed to parse questions JSON", raw: reply });
     }
   } catch (error) {
     console.error('Server error calling SambaNova API:', error);
     res.status(500).json({ error: 'Server error calling SambaNova API.' });
   }
+});
+
+// --- Store questions (mock, no DB) ---
+app.post('/api/store', (req, res) => {
+  const { subject, payload } = req.body;
+  if (!subject || !payload || !Array.isArray(payload.questions)) {
+    return res.status(400).json({ error: 'subject and payload.questions are required' });
+  }
+
+  console.log("📥 Received subject:", subject);
+  console.log("📥 Questions count:", payload.questions.length);
+
+  // Instead of DB insert, just echo back
+  res.json({ message: 'Payload received successfully', subject, count: payload.questions.length });
 });
 
 app.listen(PORT, () => {
